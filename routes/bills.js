@@ -7,11 +7,14 @@ const Bill = require('../models/Bill');
 // @desc    Add a new bill
 router.post('/', auth, async (req, res) => {
   try {
-    const { description, amount } = req.body;
+    const { customerName, customerPhone, customerEmail, items } = req.body;
+
     const newBill = new Bill({
       user: req.user.id,
-      description,
-      amount
+      customerName,
+      customerPhone,
+      customerEmail,
+      items
     });
 
     const bill = await newBill.save();
@@ -30,6 +33,50 @@ router.get('/', auth, async (req, res) => {
     res.json(bills);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+// @route   DELETE /bills/:id
+// @desc    Delete a bill by ID
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const bill = await Bill.findOne({ _id: req.params.id, user: req.user.id });
+
+    if (!bill) {
+      return res.status(404).json({ msg: 'Bill not found' });
+    }
+
+    await bill.deleteOne();
+    res.json({ msg: 'Bill deleted successfully' });
+  } catch (err) {
+    console.error(err.message);
+
+    if (err.kind === 'ObjectId') {
+      return res.status(400).json({ msg: 'Invalid bill ID' });
+    }
+
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET /bills/:id
+// @desc    Get a single bill by ID
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const bill = await Bill.findOne({ _id: req.params.id, user: req.user.id });
+
+    if (!bill) {
+      return res.status(404).json({ msg: 'Bill not found' });
+    }
+
+    res.json(bill);
+  } catch (err) {
+    console.error(err.message);
+
+    if (err.kind === 'ObjectId') {
+      return res.status(400).json({ msg: 'Invalid bill ID' });
+    }
+
     res.status(500).send('Server error');
   }
 });
